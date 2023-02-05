@@ -14,7 +14,7 @@ class MongoConnector:
     def close_connection(self):
         self.client.close()
 
-class DataFrameObject:
+class DadosObject:
     def __init__(self, collection, dataframe:pd.DataFrame) -> None:
         self.collection = collection
         self.dataframe = dataframe
@@ -22,13 +22,13 @@ class DataFrameObject:
         records = self.dataframe.to_dict(orient="records")
         mongo_connector.collection.insert_many(records)
 
-class DadosCarro(DataFrameObject):
+class DadosCarro(DadosObject):
     def __init__(self, dataframe:pd.DataFrame) -> None:
         super().__init__(collection = 'carros', dataframe=dataframe)
     def insert_mongo(self, mongo_connector):
         super().insert_mongo(mongo_connector)
 
-class DadosMontadora(DataFrameObject):
+class DadosMontadora(DadosObject):
     def __init__(self, dataframe:pd.DataFrame) -> None:
         super().__init__(collection = 'montadoras', dataframe=dataframe)
     def insert_mongo(self, mongo_connector):
@@ -36,7 +36,7 @@ class DadosMontadora(DataFrameObject):
         
 
 class Executor:
-    def __init__(self, string_connection, dataframe_carros, dataframe_montadoras):
+    def __init__(self, string_connection, dataframe_carros, dataframe_montadoras) -> None:
         self.dataframe_carros = dataframe_carros
         self.dataframe_montadoras = dataframe_montadoras
         self.conector_local = MongoConnector(string_connection)
@@ -44,30 +44,19 @@ class Executor:
         self.collection_montadoras = self.conector_local.return_collection('montadoras')
         self.collection_carros.drop()
         self.collection_montadoras.drop()
-    def inserir_carros(self):
-        """AI is creating summary for inserir_carros
-
-        Args:
-            dataframe_carros ([type]): [description]
-        """
+    def inserir_carros(self) -> None:
         carros = DadosCarro(dataframe=self.dataframe_carros)
         self.collection_carros = self.conector_local.return_collection('carros')
         carros.insert_mongo(self.conector_local)
         
         
-    def inserir_montadoras(self):
-        """AI is creating summary for inserir_carros
-
-        Args:
-            dataframe_carros ([type]): [description]
-        """
+    def inserir_montadoras(self) -> None:
         montadoras = DadosMontadora(dataframe=self.dataframe_montadoras)
         self.collection_montadoras = self.conector_local.return_collection('montadoras')
         montadoras.insert_mongo(self.conector_local)
     
 
-
-    def gerar_agregacao(self):
+    def gerar_agregacao(self) -> None:
         # Realizar a agregação para fazer o relacionamento
         pipeline = pipeline = [
                             {"$lookup": {
@@ -88,17 +77,12 @@ class Executor:
         # Converter o resultado para um DataFrame do Pandas
         result_df = pd.DataFrame(result_lista)
         print(result_df)
-        #result_df['_id'] = result_df['_id'].apply(lambda x: x[0])
         self.conector_local.db.carros.drop()
         self.conector_local.db.carros.insert_many(result_df.to_dict(orient="records"))
-        for result in result:
-            pais = result["_id"]
-            carros = result["carros"]
-            #self.collection_montadoras.update_one({"Montadora": pais}, {"$set": {"Carros": carros}})
         with open("agregacao.js", "w") as f:
             json.dump(pipeline, f)
     
-    def run(self):
+    def run(self) -> None:
         self.inserir_carros()
         self.inserir_montadoras()
         self.gerar_agregacao()

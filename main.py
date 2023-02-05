@@ -1,4 +1,4 @@
-from classes import DataFrameObject, DadosCarro, DadosMontadora, MongoConnector, Executor
+from classes import Executor
 import pandas as pd
 
 dataframe_carros_input = pd.DataFrame(
