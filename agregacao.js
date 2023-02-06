@@ -1,1 +1,0 @@
-[{"$lookup": {"from": "montadoras", "localField": "Montadora", "foreignField": "Montadora", "as": "Montadoras"}}, {"$unwind": "$Montadoras"}, {"$addFields": {"Pa\u00eds": "$Montadoras.Pa\u00eds"}}]
