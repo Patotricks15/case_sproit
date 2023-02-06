@@ -6,7 +6,7 @@
 Esse script Python executa várias tarefas para gerenciar dados armazenados em um banco de dados MongoDB.
 
 
-![classes](https://github.com/Patotricks15/case_sproit/blob/main/classes.png)
+![classes_png](https://github.com/Patotricks15/case_sproit/blob/main/classes.png)
 
 
 O código começa definindo as classes que vão gerenciar os dados
