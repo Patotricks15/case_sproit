@@ -17,9 +17,6 @@ input_carro = pd.DataFrame({'Carro': carro_carro,
                 'Cor': carro_cor,
                 'Montadora': carro_montadora
                 }, index = [0])
-
-print(input_carro)
-
         
 
 
