@@ -1,6 +1,10 @@
 # case_sproit
 
+## main.py
+Esse script cria os dados de acordo com as informações passadas no docx da Avaliação, e executa as classes do script classes.py
 
+## mvp.py
+Esse script é uma aplicação streamlit para a inserção de novos dados baseados no input do usu
 
 ## classes.py
 Esse script Python executa várias tarefas para gerenciar dados armazenados em um banco de dados MongoDB.
