@@ -42,4 +42,5 @@ dataframe_montadoras_input = pd.DataFrame({'Montadora':['Chevrolet',
 if __name__ == "__main__":
     Executor("mongodb://localhost:27017/",
              dataframe_carros_input,
-             dataframe_montadoras_input).run()
+             dataframe_montadoras_input,
+             clear=True).run()

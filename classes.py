@@ -36,14 +36,17 @@ class DadosMontadora(DadosObject):
         
 
 class Executor:
-    def __init__(self, string_connection, dataframe_carros, dataframe_montadoras) -> None:
+    def __init__(self, string_connection:str, dataframe_carros:pd.DataFrame, dataframe_montadoras:pd.DataFrame, clear:bool=False) -> None:
         self.dataframe_carros = dataframe_carros
         self.dataframe_montadoras = dataframe_montadoras
         self.conector_local = MongoConnector(string_connection)
         self.collection_carros = self.conector_local.return_collection('carros')
         self.collection_montadoras = self.conector_local.return_collection('montadoras')
-        self.collection_carros.drop()
-        self.collection_montadoras.drop()
+        if clear == True:
+            self.collection_carros.drop()
+            self.collection_montadoras.drop()
+        else:
+            pass
     def inserir_carros(self) -> None:
         carros = DadosCarro(dataframe=self.dataframe_carros)
         self.collection_carros = self.conector_local.return_collection('carros')
@@ -58,7 +61,7 @@ class Executor:
 
     def gerar_agregacao(self) -> None:
         # Realizar a agregação para fazer o relacionamento
-        pipeline = pipeline = [
+        pipeline_nova_collection = [
                             {"$lookup": {
                             "from": "montadoras",
                             "localField": "Montadora",
@@ -67,23 +70,44 @@ class Executor:
                             }},
                             {"$unwind": "$Montadoras"},
                             {"$addFields": {"País": "$Montadoras.País"}},
-                            
-                            
+                                        {"$group": {
+                            "_id": "$Montadoras.País",
+                            "Carros": {"$push": "$$ROOT"}
+                            }}
                             ]
-        result = self.collection_carros.aggregate(pipeline)
-
+        result = self.collection_carros.aggregate(pipeline_nova_collection)
         result_lista = list(result)
-        print(result_lista)
         # Converter o resultado para um DataFrame do Pandas
         result_df = pd.DataFrame(result_lista)
-        print(result_df)
+        self.conector_local.db.país.drop()
+        self.conector_local.db.país.insert_many(result_df.to_dict(orient="records"))
+        with open("agregacao_collection_país.js", "w") as f:
+            json.dump(pipeline_nova_collection, f)
+        
+        pipeline_carros = [
+                            {"$lookup": {
+                            "from": "montadoras",
+                            "localField": "Montadora",
+                            "foreignField": "Montadora",
+                            "as": "Montadoras"
+                            }},
+                            {"$unwind": "$Montadoras"},
+                            {"$addFields": {"País": "$Montadoras.País"}}
+
+                            ]
+        result = self.collection_carros.aggregate(pipeline_carros)
+        result_lista = list(result)
+        # Converter o resultado para um DataFrame do Pandas
+        result_df = pd.DataFrame(result_lista)
         self.conector_local.db.carros.drop()
         self.conector_local.db.carros.insert_many(result_df.to_dict(orient="records"))
-        with open("agregacao.js", "w") as f:
-            json.dump(pipeline, f)
-    
-    def run(self) -> None:
-        self.inserir_carros()
-        self.inserir_montadoras()
+        with open("agregacao_carros.js", "w") as f:
+            json.dump(pipeline_carros, f)
+            
+    def run(self, carros:bool=True, montadoras:bool=True) -> None:
+        if carros:
+            self.inserir_carros()
+        if montadoras:
+            self.inserir_montadoras()
         self.gerar_agregacao()
         self.conector_local.close_connection()
